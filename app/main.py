@@ -25,6 +25,8 @@ class App(arcade.Window):
     self.difficulty = 0
     self.level_diff = 1
     self.score = 0
+    self.pause_game = False
+    self.dificultad_original = True
   
   def init_game(self):
     self.restart_game()
@@ -32,6 +34,7 @@ class App(arcade.Window):
     arcade.schedule(self.add_invaders,2.5)
   
   def restart_game(self):
+    self.dificultad_original = True
     self.app_started = True
     self.app_lose = False
     self.app_tutorial = False
@@ -83,37 +86,42 @@ class App(arcade.Window):
       
   def on_key_press(self, symbol: int, modifiers: int):
     if self.app_started:
-      if symbol == arcade.key.UP:
-        self.player.speed_y = SPEED
-      if symbol == arcade.key.DOWN:
-        self.player.speed_y = -SPEED
-      if symbol == arcade.key.LEFT:
-        self.player.speed_x = -SPEED
-      if symbol == arcade.key.RIGHT:
-        self.player.speed_x = SPEED
-      
-      if symbol == arcade.key.W:
-        bullet_ship = BulletShip(
-          "assets/shot1_4.png",1,20,
-          self.player.center_x,self.player.center_y-4,"normal",0)
-        self.bullet_ships.append(bullet_ship)
-      if symbol == arcade.key.Q and not self.shield_on:
-        bullet_one = BulletShip(
-          "assets/shot1_exp2.png",1.2,15,
-          self.player.center_x,self.player.center_y-4,"bigger",0)
-        bullet_two = BulletShip(
-          "assets/shot1_exp2.png",1.2,15,
-          self.player.center_x,self.player.center_y-4,"bigger",30)
-        bullet_three = BulletShip(
-          "assets/shot1_exp2.png",1.2,16,
-          self.player.center_x,self.player.center_y-4,"bigger",-30)
-        self.bullet_ships.append(bullet_one)
-        self.bullet_ships.append(bullet_two)
-        self.bullet_ships.append(bullet_three)
+      if not self.pause_game:
+        if symbol == arcade.key.UP:
+          self.player.speed_y = SPEED
+        if symbol == arcade.key.DOWN:
+          self.player.speed_y = -SPEED
+        if symbol == arcade.key.LEFT:
+          self.player.speed_x = -SPEED
+        if symbol == arcade.key.RIGHT:
+          self.player.speed_x = SPEED
         
-      if symbol == arcade.key.E  and self.time_shield_off > 35:
-        self.shield_on = True
-        self.time_shield_off = 0
+        if symbol == arcade.key.W:
+          bullet_ship = BulletShip(
+            "assets/shot1_4.png",1,20,
+            self.player.center_x,self.player.center_y-4,"normal",0)
+          self.bullet_ships.append(bullet_ship)
+        if symbol == arcade.key.Q and not self.shield_on:
+          bullet_one = BulletShip(
+            "assets/shot1_exp2.png",1.2,15,
+            self.player.center_x,self.player.center_y-4,"bigger",0)
+          bullet_two = BulletShip(
+            "assets/shot1_exp2.png",1.2,15,
+            self.player.center_x,self.player.center_y-4,"bigger",30)
+          bullet_three = BulletShip(
+            "assets/shot1_exp2.png",1.2,16,
+            self.player.center_x,self.player.center_y-4,"bigger",-30)
+          self.bullet_ships.append(bullet_one)
+          self.bullet_ships.append(bullet_two)
+          self.bullet_ships.append(bullet_three)
+          
+        if symbol == arcade.key.E  and self.time_shield_off > 35:
+          self.shield_on = True
+          self.time_shield_off = 0
+      
+      if symbol == arcade.key.P:
+        self.pause_game = not self.pause_game
+    
     else:
       if ((symbol==arcade.key.I and not self.app_lose and not self.app_tutorial) or
           (symbol == arcade.key.R and self.app_lose)):
@@ -130,9 +138,9 @@ class App(arcade.Window):
       
   
   def on_key_release(self, symbol: int, modifiers: int):
-    if symbol in (arcade.key.UP, arcade.key.DOWN):
+    if symbol in (arcade.key.UP, arcade.key.DOWN) and self.app_started:
       self.player.speed_y = 0
-    if symbol in (arcade.key.LEFT, arcade.key.RIGHT):
+    if symbol in (arcade.key.LEFT, arcade.key.RIGHT) and self.app_started:
       self.player.speed_x = 0
   
   def check_collision(self, delta_time: float,sprite):
@@ -204,7 +212,7 @@ class App(arcade.Window):
       if invader.center_x <= 1 or invader.life_invader <=0:
         self.destroyed_item_getter(invader)
         if invader.life_invader <=0:
-          self.score += 1
+          self.score += 1 if invader.type == "normal" else 3
           self.life_increaser()
       elif invader.collides_with_list(self.bullet_ships):
         for bullet_ship in self.bullet_ships:
@@ -301,13 +309,25 @@ class App(arcade.Window):
     self.rocks.update()
     
   def life_increaser(self):
-    if self.score % 100 == 0 and self.score != 0:
-      self.player.life = 10
-    elif self.score % 25 == 0 and self.score != 0:
-      if self.player.life + 2 <= 10:
-        self.player.life += 2
+    life_incrementer = 0
+    if self.score % 200 == 0 and self.score != 0:
+      life_incrementer = 10
+    elif self.score % 100 == 0 and self.score != 0:
+      if self.player.life + 5 <= 10:
+        life_incrementer = 5
       else:
-        self.player.life = 10
+        life_incrementer = 10 - self.player.life
+    elif self.score % 50 == 0 and self.score != 0:
+      if self.player.life + 3 <= 10:
+        life_incrementer = 2
+      else:
+        life_incrementer = 10 - self.player.life
+    
+    if life_incrementer != 10:
+      self.player.life += life_incrementer
+    else:
+      self.player.life = 10
+
   def player_updater(self, delta_time: float):
     # Limit Height
     cond_top = self.player.center_y < SCREEN_HEIGHT - 10
@@ -339,17 +359,29 @@ class App(arcade.Window):
   
   def on_update(self, delta_time: float):
     if self.app_started:
-      self.upgrade_difficult(delta_time)
-      self.sprites.update()
-      self.rocks_updater(delta_time)
-      self.bullets_updater(delta_time)
-      self.invader_updater(delta_time)
-      self.invader_bullets_updater(delta_time)
-      if self.appear:
-        self.player_damage_updater(delta_time)
-      self.destroyed_items.update()
-      self.shield_updater(delta_time)
-      self.player_updater(delta_time)
+      if not self.pause_game:
+        self.upgrade_difficult(delta_time)
+        self.sprites.update()
+        self.rocks_updater(delta_time)
+        self.bullets_updater(delta_time)
+        self.invader_updater(delta_time)
+        self.invader_bullets_updater(delta_time)
+        if self.appear:
+          self.player_damage_updater(delta_time)
+        self.destroyed_items.update()
+        self.shield_updater(delta_time)
+        self.player_updater(delta_time)
+        
+        if not self.dificultad_original:
+          for _ in range(0,self.level_diff):
+            arcade.schedule(self.add_invaders,2.5)
+          arcade.schedule(self.add_rocks,1)
+          self.dificultad_original = True
+      else:
+        for _ in range(0,self.level_diff):
+          arcade.unschedule(self.add_invaders)
+        arcade.unschedule(self.add_rocks)
+        self.dificultad_original = False
   
   def damage_drawer(self,sprite_list):
     for sprite in sprite_list:
@@ -375,6 +407,10 @@ class App(arcade.Window):
       # space += 30 if i!=0 else 0
       arcade.draw_rectangle_filled(space,top,
                                     35,35,arcade.color.GREEN)
+    
+    state_game = "continue" if self.pause_game else "pause"
+    text_game_message = "Press 'p' to "+state_game
+    arcade.draw_text(text_game_message,SCREEN_WIDTH//2 - 75,top-60,arcade.color.WHITE,12,bold=True)
     
     space = 120
     arcade.draw_text("SHIELD:",20,top-60,arcade.color.WHITE,12,bold=True)

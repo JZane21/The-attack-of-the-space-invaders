@@ -92,7 +92,11 @@ Al introducirse en las instrucciones del juego, es posible ver las siguientes in
 
 **Nota :** Mientras este usando el escudo, no podrá disparar balas grandes. Además de ello, el escudo no lo protegerá si choca con algún enemigo. Y el tiempo de recarga de este es de 35 segundos.
 
+- Durante la partida, acumulará puntos por cada enemigo eliminado, lo que le permitirá recuperar puntos de salud que haya perdido durante la partida.
+
 - El nivel y la dificultad aumentarán cada 90 segundos.
+
+- Podrá pausar la partida utilizando la tecla 'p'.
 
 Al iniciar el juego, usted podrá interactuar con la nave presentada a continuación:
 
