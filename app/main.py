@@ -1,16 +1,15 @@
 import random
 import arcade
 import math
-from Ship import Ship
-from Rock import Rock
-from BulletShip import BulletShip
-from Invader import Invader
+from objects_classes import Ship
+from objects_classes import Rock
+from objects_classes import BulletShip
+from objects_classes import Invader
 import time
 
 SCREEN_WIDTH = 800
 SCREEN_HEIGHT = 800
 SCREEN_INFO = 150
-TOTAL_SCREEN_HEIGHT = SCREEN_HEIGHT + SCREEN_INFO
 SCREEN_TITLE = "The Attack of the Space Invaders"
 SCALING = 0.5
 SPEED = 3
@@ -20,7 +19,6 @@ class App(arcade.Window):
   def __init__(self):
     super().__init__(SCREEN_WIDTH, SCREEN_HEIGHT + SCREEN_INFO, SCREEN_TITLE)
     arcade.set_background_color(arcade.color.BLACK)
-    # self.restart_game()
     self.app_started = False
     self.app_lose = False
     self.app_tutorial = False
@@ -32,9 +30,6 @@ class App(arcade.Window):
     self.restart_game()
     arcade.schedule(self.add_rocks, 1)
     arcade.schedule(self.add_invaders,2.5)
-  
-  def get_out(self):
-    arcade.close_window()
   
   def restart_game(self):
     self.app_started = True
@@ -125,7 +120,7 @@ class App(arcade.Window):
         self.init_game()
         
       if symbol == arcade.key.X and not self.app_tutorial:
-        self.get_out()
+        arcade.close_window()
         
       if symbol == arcade.key.H and not self.app_lose:
         self.show_controls()
@@ -210,6 +205,7 @@ class App(arcade.Window):
         self.destroyed_item_getter(invader)
         if invader.life_invader <=0:
           self.score += 1
+          self.life_increaser()
       elif invader.collides_with_list(self.bullet_ships):
         for bullet_ship in self.bullet_ships:
           if bullet_ship.collides_with_sprite(invader):
@@ -303,7 +299,15 @@ class App(arcade.Window):
         self.check_collision(delta_time,rock)
         rock.normal_damage.update()
     self.rocks.update()
-  
+    
+  def life_increaser(self):
+    if self.score % 100 == 0 and self.score != 0:
+      self.player.life = 10
+    elif self.score % 25 == 0 and self.score != 0:
+      if self.player.life + 2 <= 10:
+        self.player.life += 2
+      else:
+        self.player.life = 10
   def player_updater(self, delta_time: float):
     # Limit Height
     cond_top = self.player.center_y < SCREEN_HEIGHT - 10
@@ -322,12 +326,14 @@ class App(arcade.Window):
     if self.player.damaged:
       self.check_collision(delta_time,self.player)
       self.player.normal_damage.update()
-    already_exist = 0
+    already_exist = -1
+    posible_index = None
     try:
       already_exist = self.destroyed_items.index(self.player)
+      posible_index = self.destroyed_items.__getitem__(already_exist)
     except ValueError:
       already_exist = -1
-    if self.player.life <= 0 and already_exist==-1:
+    if self.player.life <= 0 and already_exist==-1 and posible_index == None:
       self.destroyed_item_getter(self.player)
     self.player.update()
   
